@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Academic Reports & Exports &bull; StudySync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-file-earmark-bar-graph-fill text-primary"></i> Academic Reports & Exports
+    </h1>
+    <p class="page-subtitle">Generate official academic performance summaries and export directly to PDF or CSV format.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('reports.export', format_type='pdf', type=report_type, subject_id=selected_subject, date_from=date_from, date_to=date_to) }}" 
+       class="btn btn-danger btn-sm d-flex align-items-center gap-1 shadow-sm">
+      <i class="bi bi-file-earmark-pdf-fill"></i> Download PDF
+    </a>
+    <a href="{{ url_for('reports.export', format_type='csv', type=report_type, subject_id=selected_subject, date_from=date_from, date_to=date_to) }}" 
+       class="btn btn-success btn-sm d-flex align-items-center gap-1 shadow-sm">
+      <i class="bi bi-file-earmark-spreadsheet-fill"></i> Export CSV
+    </a>
+  </div>
+</div>
+
+<!-- Report Filter Card -->
+<div class="panel-card mb-4">
+  <div class="panel-body p-3">
+    <form method="GET" action="{{ url_for('reports.index') }}" class="row g-3 align-items-end">
+      <!-- Report Type -->
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Report Specification</label>
+        <select name="type" class="form-select form-select-sm">
+          <option value="summary" {% if report_type == 'summary' %}selected{% endif %}>Comprehensive Task Summary</option>
+          <option value="completed" {% if report_type == 'completed' %}selected{% endif %}>Completed Requirements</option>
+          <option value="pending" {% if report_type == 'pending' %}selected{% endif %}>Pending Workload</option>
+          <option value="overdue" {% if report_type == 'overdue' %}selected{% endif %}>Overdue Critical Items</option>
+        </select>
+      </div>
+
+      <!-- Subject Filter -->
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Course Subject</label>
+        <select name="subject_id" class="form-select form-select-sm">
+          <option value="">All Subjects</option>
+          {% for s in subjects %}
+            <option value="{{ s.id }}" {% if selected_subject == s.id %}selected{% endif %}>{{ s.subject_code }} - {{ s.subject_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Date From -->
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold">From Date</label>
+        <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+      </div>
+
+      <!-- Date To -->
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold">To Date</label>
+        <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+      </div>
+
+      <!-- Submit -->
+      <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary-custom btn-sm w-100">Generate</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Report Summary KPI Header -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="p-3 bg-white border rounded-3 text-center">
+      <small class="text-muted fw-bold d-block">TOTAL RECORDS</small>
+      <span class="fs-4 fw-bold text-dark">{{ total_count }}</span>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="p-3 bg-white border rounded-3 text-center">
+      <small class="text-success fw-bold d-block">COMPLETED</small>
+      <span class="fs-4 fw-bold text-success">{{ completed_count }}</span>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="p-3 bg-white border rounded-3 text-center">
+      <small class="text-warning fw-bold d-block">PENDING / IN PROGRESS</small>
+      <span class="fs-4 fw-bold text-warning">{{ pending_count }}</span>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="p-3 bg-white border rounded-3 text-center">
+      <small class="text-danger fw-bold d-block">OVERDUE</small>
+      <span class="fs-4 fw-bold text-danger">{{ overdue_count }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Report Live Data Table Preview -->
+<div class="panel-card">
+  <div class="panel-header">
+    <h5 class="panel-title mb-0"><i class="bi bi-eye-fill text-primary"></i> Live Generated Report Preview</h5>
+    <span class="text-muted small">Ready to export</span>
+  </div>
+  <div class="panel-body p-0">
+    {% if tasks_data %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="bg-light small text-uppercase text-muted">
+            <tr>
+              <th class="ps-4">ID</th>
+              <th>Course</th>
+              <th>Task Title</th>
+              <th>Type</th>
+              <th>Due Date</th>
+              <th>Priority</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in tasks_data %}
+              <tr>
+                <td class="ps-4 text-muted small">#{{ row.id }}</td>
+                <td>
+                  <span class="badge bg-light text-dark border">{{ row.subject_code or 'General' }}</span>
+                </td>
+                <td class="fw-semibold text-dark">{{ row.title }}</td>
+                <td><small class="text-muted">{{ row.task_type }}</small></td>
+                <td><small class="fw-semibold">{{ row.due_date|datetimeformat }}</small></td>
+                <td>
+                  <span class="badge-priority badge-priority-{{ (row.calculated_priority or row.priority)|lower }}">
+                    {{ row.calculated_priority or row.priority }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge-status badge-{{ row.status|lower|replace(' ', '') }}">
+                    {{ row.status }}
+                  </span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="p-5 text-center text-muted">
+        <i class="bi bi-folder-x fs-1 text-secondary d-block mb-2"></i>
+        No tasks match the selected report criteria.
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

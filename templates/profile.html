@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile &bull; StudySync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-person-circle text-primary"></i> Student Profile
+    </h1>
+    <p class="page-subtitle">Manage personal academic details, profile avatar colors, and account security credentials.</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Profile Information Form -->
+  <div class="col-lg-7">
+    <div class="panel-card">
+      <div class="panel-header">
+        <h5 class="panel-title mb-0"><i class="bi bi-person-vcard text-primary"></i> Academic Profile Details</h5>
+      </div>
+      <div class="panel-body p-4">
+        <form method="POST">
+          <input type="hidden" name="action" value="update_profile">
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Student ID</label>
+              <input type="text" class="form-control bg-light" value="{{ user.student_id }}" disabled>
+              <small class="text-muted" style="font-size: 0.7rem;">Student ID cannot be modified</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Email Address</label>
+              <input type="email" class="form-control bg-light" value="{{ user.email }}" disabled>
+              <small class="text-muted" style="font-size: 0.7rem;">Verified university email</small>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="full_name" class="form-label small fw-semibold">Full Legal Name *</label>
+            <input type="text" class="form-control" id="full_name" name="full_name" value="{{ user.full_name }}" required>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="course_program" class="form-label small fw-semibold">Degree Program</label>
+              <input type="text" class="form-control" id="course_program" name="course_program" value="{{ user.course_program or '' }}">
+            </div>
+            <div class="col-md-6">
+              <label for="year_level" class="form-label small fw-semibold">Year Level</label>
+              <select class="form-select" id="year_level" name="year_level">
+                <option value="1st Year" {% if user.year_level == '1st Year' %}selected{% endif %}>1st Year</option>
+                <option value="2nd Year" {% if user.year_level == '2nd Year' %}selected{% endif %}>2nd Year</option>
+                <option value="3rd Year" {% if user.year_level == '3rd Year' %}selected{% endif %}>3rd Year</option>
+                <option value="4th Year" {% if user.year_level == '4th Year' %}selected{% endif %}>4th Year</option>
+                <option value="Graduate / Staff" {% if user.year_level == 'Graduate / Staff' %}selected{% endif %}>Graduate / Staff</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="avatar_color" class="form-label small fw-semibold">Avatar Theme Color</label>
+            <div class="d-flex align-items-center gap-3">
+              <input type="color" class="form-control form-control-color" id="avatar_color" name="avatar_color" value="{{ user.avatar_color }}">
+              <span class="small text-muted">Choose your custom accent color for badges and top navigation</span>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label for="bio" class="form-label small fw-semibold">Academic Bio / Focus Areas</label>
+            <textarea class="form-control" id="bio" name="bio" rows="3" placeholder="Tell us about your academic pursuits...">{{ user.bio or '' }}</textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary-custom">
+            <i class="bi bi-save-fill"></i> Save Profile Details
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Password Form -->
+  <div class="col-lg-5">
+    <div class="panel-card">
+      <div class="panel-header">
+        <h5 class="panel-title mb-0"><i class="bi bi-key-fill text-secondary"></i> Change Password</h5>
+      </div>
+      <div class="panel-body p-4">
+        <form method="POST">
+          <input type="hidden" name="action" value="change_password">
+
+          <div class="mb-3">
+            <label for="current_password" class="form-label small fw-semibold">Current Password *</label>
+            <input type="password" class="form-control" id="current_password" name="current_password" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="new_password" class="form-label small fw-semibold">New Password *</label>
+            <input type="password" class="form-control" id="new_password" name="new_password" minlength="6" required>
+            <small class="text-muted" style="font-size: 0.72rem;">Minimum 6 characters</small>
+          </div>
+
+          <div class="mb-4">
+            <label for="confirm_new_password" class="form-label small fw-semibold">Confirm New Password *</label>
+            <input type="password" class="form-control" id="confirm_new_password" name="confirm_new_password" minlength="6" required>
+          </div>
+
+          <button type="submit" class="btn btn-secondary-custom w-100 justify-content-center">
+            <i class="bi bi-shield-check"></i> Update Password
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

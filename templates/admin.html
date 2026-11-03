@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Administrator Control Center &bull; StudySync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title text-danger">
+      <i class="bi bi-shield-lock-fill"></i> System Administration Panel
+    </h1>
+    <p class="page-subtitle">Platform-wide user directory, account access controls, audit logs, and institutional metrics.</p>
+  </div>
+  <div>
+    <form action="{{ url_for('admin.clear_logs') }}" method="POST" onsubmit="return confirm('Purge audit logs older than the last 50 entries?');">
+      <button type="submit" class="btn btn-outline-danger btn-sm">
+        <i class="bi bi-eraser-fill me-1"></i> Maintenance: Prune Audit Logs
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- System-wide Aggregate Metric Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-md-2 col-6">
+    <div class="stat-card total">
+      <div class="stat-info">
+        <span class="stat-label">Students</span>
+        <span class="stat-value">{{ stats.total_students or 0 }}</span>
+      </div>
+      <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+    </div>
+  </div>
+  <div class="col-md-2 col-6">
+    <div class="stat-card completed">
+      <div class="stat-info">
+        <span class="stat-label">Active Users</span>
+        <span class="stat-value">{{ stats.active_students or 0 }}</span>
+      </div>
+      <div class="stat-icon"><i class="bi bi-person-check-fill"></i></div>
+    </div>
+  </div>
+  <div class="col-md-2 col-6">
+    <div class="stat-card pending">
+      <div class="stat-info">
+        <span class="stat-label">Total Tasks</span>
+        <span class="stat-value">{{ stats.total_tasks or 0 }}</span>
+      </div>
+      <div class="stat-icon"><i class="bi bi-check2-all"></i></div>
+    </div>
+  </div>
+  <div class="col-md-2 col-6">
+    <div class="stat-card completed">
+      <div class="stat-info">
+        <span class="stat-label">Finished Tasks</span>
+        <span class="stat-value">{{ stats.completed_tasks or 0 }}</span>
+      </div>
+      <div class="stat-icon"><i class="bi bi-award-fill"></i></div>
+    </div>
+  </div>
+  <div class="col-md-2 col-6">
+    <div class="stat-card overdue">
+      <div class="stat-info">
+        <span class="stat-label">Overdue Tasks</span>
+        <span class="stat-value">{{ stats.overdue_tasks or 0 }}</span>
+      </div>
+      <div class="stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+    </div>
+  </div>
+  <div class="col-md-2 col-6">
+    <div class="stat-card priority">
+      <div class="stat-info">
+        <span class="stat-label">Total Subjects</span>
+        <span class="stat-value">{{ stats.total_subjects or 0 }}</span>
+      </div>
+      <div class="stat-icon"><i class="bi bi-journal-bookmark-fill"></i></div>
+    </div>
+  </div>
+</div>
+
+<!-- Student User Management Table -->
+<div class="panel-card mb-4">
+  <div class="panel-header bg-light">
+    <h5 class="panel-title mb-0"><i class="bi bi-person-lines-fill text-primary"></i> Registered Student Accounts</h5>
+    <span class="badge bg-secondary rounded-pill">{{ students|length }} Students</span>
+  </div>
+  <div class="panel-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light small text-uppercase text-muted">
+          <tr>
+            <th class="ps-4">Student ID</th>
+            <th>Name & Email</th>
+            <th>Academic Program</th>
+            <th>Year Level</th>
+            <th>Task Stats</th>
+            <th>Account Status</th>
+            <th class="text-end pe-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+            <tr>
+              <td class="ps-4 fw-bold text-dark">{{ s.student_id }}</td>
+              <td>
+                <div class="fw-semibold text-dark">{{ s.full_name }}</div>
+                <small class="text-muted">{{ s.email }}</small>
+              </td>
+              <td><span class="badge bg-light text-dark border">{{ s.course_program or 'General' }}</span></td>
+              <td><small class="text-muted">{{ s.year_level or 'N/A' }}</small></td>
+              <td>
+                <small class="d-block">Total: <b>{{ s.total_tasks or 0 }}</b></small>
+                <small class="text-success">Done: <b>{{ s.completed_tasks or 0 }}</b></small>
+              </td>
+              <td>
+                {% if s.is_active %}
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                {% else %}
+                  <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Suspended</span>
+                {% endif %}
+              </td>
+              <td class="text-end pe-4">
+                <form action="{{ url_for('admin.toggle_user_status', user_id=s.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Change status for {{ s.full_name }}?');">
+                  <button type="submit" class="btn btn-sm {% if s.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
+                    {% if s.is_active %}Deactivate{% else %}Activate{% endif %}
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- System Audit Logs -->
+<div class="panel-card">
+  <div class="panel-header bg-light">
+    <h5 class="panel-title mb-0"><i class="bi bi-journal-text text-secondary"></i> System Audit & Activity Logs</h5>
+    <small class="text-muted">Showing recent 25 system events</small>
+  </div>
+  <div class="panel-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.82rem;">
+        <thead class="bg-light text-muted small">
+          <tr>
+            <th class="ps-4">Timestamp</th>
+            <th>User Account</th>
+            <th>Action Performed</th>
+            <th>IP Address</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in audit_logs %}
+            <tr>
+              <td class="ps-4 text-muted">{{ log.created_at }}</td>
+              <td>
+                {% if log.full_name %}
+                  <span class="fw-semibold text-dark">{{ log.full_name }}</span> 
+                  <small class="text-muted">({{ log.role }})</small>
+                {% else %}
+                  <span class="text-muted">System / Anonymous</span>
+                {% endif %}
+              </td>
+              <td><span class="badge bg-light text-dark border">{{ log.action }}</span></td>
+              <td class="text-muted font-monospace">{{ log.ip_address or '127.0.0.1' }}</td>
+              <td class="text-secondary">{{ log.details or '-' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

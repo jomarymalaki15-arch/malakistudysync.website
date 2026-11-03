@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Search & Filter Tasks &bull; StudySync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-search text-primary"></i> Task Search & Dynamic Filter
+    </h1>
+    <p class="page-subtitle">Locate tasks by keywords, course code, submission status, or due date criteria.</p>
+  </div>
+</div>
+
+<!-- Search Panel -->
+<div class="panel-card mb-4">
+  <div class="panel-body p-4">
+    <form method="GET" action="{{ url_for('tasks.search_filter') }}">
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Keywords</label>
+          <div class="input-group">
+            <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
+            <input type="text" name="q" class="form-control" placeholder="Search task title, rubric, or notes..." value="{{ keyword }}">
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Subject</label>
+          <select name="subject_id" class="form-select">
+            <option value="">All Subjects</option>
+            {% for s in subjects %}
+              <option value="{{ s.id }}" {% if subject_filter == s.id %}selected{% endif %}>{{ s.subject_code }} - {{ s.subject_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <label class="form-label small fw-semibold">Status</label>
+          <select name="status" class="form-select">
+            <option value="">All Statuses</option>
+            <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending</option>
+            <option value="In Progress" {% if status_filter == 'In Progress' %}selected{% endif %}>In Progress</option>
+            <option value="Completed" {% if status_filter == 'Completed' %}selected{% endif %}>Completed</option>
+            <option value="Overdue" {% if status_filter == 'Overdue' %}selected{% endif %}>Overdue</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-semibold">Priority</label>
+          <select name="priority" class="form-select">
+            <option value="">All Priorities</option>
+            <option value="Critical" {% if priority_filter == 'Critical' %}selected{% endif %}>Critical</option>
+            <option value="High" {% if priority_filter == 'High' %}selected{% endif %}>High</option>
+            <option value="Medium" {% if priority_filter == 'Medium' %}selected{% endif %}>Medium</option>
+            <option value="Low" {% if priority_filter == 'Low' %}selected{% endif %}>Low</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-semibold">Task Type</label>
+          <select name="task_type" class="form-select">
+            <option value="">All Types</option>
+            <option value="Assignment" {% if type_filter == 'Assignment' %}selected{% endif %}>Assignment</option>
+            <option value="Project" {% if type_filter == 'Project' %}selected{% endif %}>Project</option>
+            <option value="Quiz" {% if type_filter == 'Quiz' %}selected{% endif %}>Quiz</option>
+            <option value="Exam" {% if type_filter == 'Exam' %}selected{% endif %}>Exam</option>
+            <option value="Presentation" {% if type_filter == 'Presentation' %}selected{% endif %}>Presentation</option>
+            <option value="Other" {% if type_filter == 'Other' %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small fw-semibold">Sort Order</label>
+          <select name="sort_by" class="form-select">
+            <option value="deadline_asc" {% if sort_by == 'deadline_asc' %}selected{% endif %}>Deadline (Earliest First)</option>
+            <option value="deadline_desc" {% if sort_by == 'deadline_desc' %}selected{% endif %}>Deadline (Furthest First)</option>
+            <option value="priority" {% if sort_by == 'priority' %}selected{% endif %}>Highest Priority</option>
+            <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest Created</option>
+            <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Oldest Created</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center">
+        <a href="{{ url_for('tasks.search_filter') }}" class="btn btn-outline-secondary btn-sm">Clear All Filters</a>
+        <button type="submit" class="btn btn-primary-custom">
+          <i class="bi bi-filter"></i> Apply Filter Criteria
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Results Header -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h6 class="fw-bold text-dark mb-0">Search Results: <span class="text-primary">{{ tasks|length }}</span> tasks found</h6>
+</div>
+
+<!-- Results List -->
+<div class="panel-card">
+  <div class="panel-body p-0">
+    {% if tasks %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="bg-light small text-uppercase text-muted">
+            <tr>
+              <th class="ps-4">Task</th>
+              <th>Subject</th>
+              <th>Type</th>
+              <th>Deadline</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th class="text-end pe-4">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in tasks %}
+              <tr>
+                <td class="ps-4">
+                  <a href="javascript:void(0);" 
+                     onclick="openTaskModal('{{ t.title|replace('\'', '\\\'') }}', '{{ t.subject_code }}', '{{ t.task_type }}', '{{ t.due_date }}', '{{ t.due_time }}', '{{ t.calculated_priority or t.priority }}', '{{ t.priority_reason|replace('\'', '\\\'') }}', '{{ t.status }}', '{{ (t.description or '')|replace('\'', '\\\'') }}', '{{ url_for('tasks.edit', task_id=t.id) }}')"
+                     class="fw-bold text-dark text-decoration-none">
+                    {{ t.title }}
+                  </a>
+                </td>
+                <td>
+                  <span class="subject-pill" style="background-color: {{ t.subject_color }};">
+                    {{ t.subject_code }}
+                  </span>
+                </td>
+                <td><span class="badge bg-light text-dark border">{{ t.task_type }}</span></td>
+                <td>
+                  <div class="fw-semibold small">{{ t.due_date|datetimeformat }}</div>
+                  <small class="text-muted">{{ t.remaining_time_display }}</small>
+                </td>
+                <td>
+                  <span class="badge-priority badge-priority-{{ (t.calculated_priority or t.priority)|lower }}">
+                    {{ t.calculated_priority or t.priority }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge-status badge-{{ t.status|lower|replace(' ', '') }}">
+                    {{ t.status }}
+                  </span>
+                </td>
+                <td class="text-end pe-4">
+                  <a href="{{ url_for('tasks.edit', task_id=t.id) }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="p-5 text-center text-muted">
+        <i class="bi bi-search fs-1 text-secondary d-block mb-3"></i>
+        <h6 class="fw-bold text-dark">No Matching Requirements</h6>
+        <p class="small text-muted mb-0">Try adjusting your keyword query or clearing the status/priority filters.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

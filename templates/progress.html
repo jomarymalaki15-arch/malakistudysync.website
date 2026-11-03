@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Academic Progress Dashboard &bull; StudySync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-pie-chart-fill text-primary"></i> Academic Progress Dashboard
+    </h1>
+    <p class="page-subtitle">Track semester completion percentages, subject mastery ratios, and academic milestone trends.</p>
+  </div>
+</div>
+
+<!-- Primary Completion Metric Card -->
+<div class="panel-card mb-4">
+  <div class="panel-body p-4">
+    <div class="row align-items-center">
+      <div class="col-md-3 text-center border-end">
+        <div class="display-3 fw-bold text-primary">{{ completion_rate }}%</div>
+        <div class="text-uppercase small fw-bold text-muted">Overall Completion Rate</div>
+      </div>
+      <div class="col-md-9 ps-md-4">
+        <h5 class="fw-bold text-dark mb-2">Milestone Completion Summary</h5>
+        <div class="progress mb-3" style="height: 18px; border-radius: 9999px; background-color: #E2E8F0;">
+          <div class="progress-bar bg-success" style="width: {{ completion_rate }}%;">
+            {{ completion_rate }}% Completed
+          </div>
+        </div>
+        <div class="row g-2 text-center text-muted small">
+          <div class="col-3">Total Tasks: <b class="text-dark">{{ stats.total_tasks }}</b></div>
+          <div class="col-3">Finished: <b class="text-success">{{ stats.completed_tasks }}</b></div>
+          <div class="col-3">Pending: <b class="text-warning">{{ stats.pending_tasks }}</b></div>
+          <div class="col-3">Overdue: <b class="text-danger">{{ stats.overdue_tasks }}</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Subject Completion Mastery -->
+<div class="panel-card mb-4">
+  <div class="panel-header">
+    <h5 class="panel-title mb-0"><i class="bi bi-mortarboard-fill text-secondary"></i> Subject Mastery & Completion Breakdown</h5>
+  </div>
+  <div class="panel-body p-4">
+    <div class="row g-4">
+      {% for s in subjects %}
+        <div class="col-md-6">
+          <div class="p-3 border rounded-3 bg-light">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="subject-pill" style="background-color: {{ s.color }};">
+                {{ s.subject_code }}
+              </span>
+              <span class="fw-bold text-dark">{{ s.rate }}% Done</span>
+            </div>
+            <div class="fw-bold text-dark small mb-2">{{ s.subject_name }}</div>
+            <div class="progress" style="height: 10px; border-radius: 9999px;">
+              <div class="progress-bar" style="width: {{ s.rate }}%; background-color: {{ s.color }};"></div>
+            </div>
+            <div class="d-flex justify-content-between text-muted small mt-2" style="font-size: 0.75rem;">
+              <span>{{ s.completed }} of {{ s.total }} requirements finished</span>
+              <span>{{ s.total - s.completed }} left</span>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

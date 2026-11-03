@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Study Recommendations &bull; StudySync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-lightbulb-fill text-warning"></i> Intelligent Study Recommendations
+    </h1>
+    <p class="page-subtitle">Rule-based academic advisories analyzing your backlog, exam dates, and deadline clusters.</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  {% for rec in recommendations %}
+    <div class="col-md-6">
+      <div class="panel-card h-100 border-{{ rec.type }} shadow-sm">
+        <div class="panel-body p-4 d-flex flex-column">
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="stat-icon bg-{{ rec.type }}-subtle text-{{ rec.type }}" style="width: 48px; height: 48px; font-size: 1.4rem;">
+              <i class="bi {{ rec.icon }}"></i>
+            </div>
+            <div>
+              <span class="badge bg-{{ rec.type }} small text-uppercase mb-1">Advisory</span>
+              <h5 class="fw-bold text-dark mb-0">{{ rec.title }}</h5>
+            </div>
+          </div>
+          
+          <p class="text-secondary small flex-grow-1" style="line-height: 1.6;">
+            {{ rec.description }}
+          </p>
+
+          <div class="pt-3 border-top mt-auto">
+            <a href="{{ rec.action_url }}" class="btn btn-sm btn-outline-{{ rec.type }} w-100 fw-semibold">
+              <i class="bi bi-arrow-right-circle-fill me-1"></i> {{ rec.action_label }}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

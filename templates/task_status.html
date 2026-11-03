@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Task Status Board &bull; StudySync{% endblock %}
+
+{% block content %}
+{% macro render_kanban_card(t, col_name) %}
+  <div class="kanban-card">
+    <div class="d-flex justify-content-between align-items-start mb-2">
+      <span class="subject-pill" style="background-color: {{ t.subject_color }};">
+        {{ t.subject_code }}
+      </span>
+      <span class="badge-priority badge-priority-{{ (t.calculated_priority or t.priority)|lower }}">
+        {{ t.calculated_priority or t.priority }}
+      </span>
+    </div>
+
+    <a href="javascript:void(0);" 
+       onclick="openTaskModal('{{ t.title|replace('\'', '\\\'') }}', '{{ t.subject_code }}', '{{ t.task_type }}', '{{ t.due_date }}', '{{ t.due_time }}', '{{ t.calculated_priority or t.priority }}', '{{ t.priority_reason|replace('\'', '\\\'') }}', '{{ t.status }}', '{{ (t.description or '')|replace('\'', '\\\'') }}', '{{ url_for('tasks.edit', task_id=t.id) }}')"
+       class="fw-bold text-dark text-decoration-none d-block mb-1" style="font-size: 0.88rem;">
+      {{ t.title }}
+    </a>
+
+    <div class="small text-muted mb-2">
+      <i class="bi bi-calendar-event me-1"></i>{{ t.due_date|datetimeformat }} ({{ t.remaining_time_display }})
+    </div>
+
+    <!-- Move status action buttons -->
+    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+      <div class="dropdown">
+        <button class="btn btn-sm btn-light border py-0 px-2 dropdown-toggle" type="button" data-bs-toggle="dropdown" style="font-size: 0.72rem;">
+          Move Status
+        </button>
+        <ul class="dropdown-menu shadow-sm p-1" style="font-size: 0.78rem;">
+          {% for st in ['Pending', 'In Progress', 'Completed', 'Overdue'] %}
+            {% if st != col_name %}
+              <li>
+                <form action="{{ url_for('tasks.move_status', task_id=t.id) }}" method="POST">
+                  <input type="hidden" name="new_status" value="{{ st }}">
+                  <button type="submit" class="dropdown-item py-1">To {{ st }}</button>
+                </form>
+              </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </div>
+
+      <a href="{{ url_for('tasks.edit', task_id=t.id) }}" class="text-secondary small text-decoration-none" title="Edit">
+        <i class="bi bi-pencil-square"></i>
+      </a>
+    </div>
+  </div>
+{% endmacro %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-kanban-fill text-primary"></i> Task Status Tracking Board
+    </h1>
+    <p class="page-subtitle">Kanban workflow tracking. Overdue requirements are automatically flagged when their deadline passes.</p>
+  </div>
+  <div>
+    <a href="{{ url_for('tasks.add') }}" class="btn btn-primary-custom">
+      <i class="bi bi-plus-lg"></i> Add New Task
+    </a>
+  </div>
+</div>
+
+<div class="kanban-grid">
+
+  <!-- COLUMN 1: PENDING -->
+  <div class="kanban-column">
+    <div class="kanban-header">
+      <div class="kanban-title text-warning">
+        <i class="bi bi-circle-fill" style="font-size: 0.6rem;"></i> Pending
+      </div>
+      <span class="kanban-count">{{ columns.Pending|length }}</span>
+    </div>
+    {% for t in columns.Pending %}
+      {{ render_kanban_card(t, 'Pending') }}
+    {% else %}
+      <p class="text-muted small text-center my-auto">No pending tasks</p>
+    {% endfor %}
+  </div>
+
+  <!-- COLUMN 2: IN PROGRESS -->
+  <div class="kanban-column">
+    <div class="kanban-header">
+      <div class="kanban-title text-primary">
+        <i class="bi bi-play-circle-fill"></i> In Progress
+      </div>
+      <span class="kanban-count">{{ columns['In Progress']|length }}</span>
+    </div>
+    {% for t in columns['In Progress'] %}
+      {{ render_kanban_card(t, 'In Progress') }}
+    {% else %}
+      <p class="text-muted small text-center my-auto">No tasks in progress</p>
+    {% endfor %}
+  </div>
+
+  <!-- COLUMN 3: OVERDUE -->
+  <div class="kanban-column" style="background-color: #FEF2F2;">
+    <div class="kanban-header border-danger">
+      <div class="kanban-title text-danger">
+        <i class="bi bi-exclamation-octagon-fill"></i> Overdue
+      </div>
+      <span class="kanban-count bg-danger text-white">{{ columns.Overdue|length }}</span>
+    </div>
+    {% for t in columns.Overdue %}
+      {{ render_kanban_card(t, 'Overdue') }}
+    {% else %}
+      <p class="text-muted small text-center my-auto">No overdue tasks</p>
+    {% endfor %}
+  </div>
+
+  <!-- COLUMN 4: COMPLETED -->
+  <div class="kanban-column">
+    <div class="kanban-header">
+      <div class="kanban-title text-success">
+        <i class="bi bi-check-circle-fill"></i> Completed
+      </div>
+      <span class="kanban-count bg-success text-white">{{ columns.Completed|length }}</span>
+    </div>
+    {% for t in columns.Completed %}
+      {{ render_kanban_card(t, 'Completed') }}
+    {% else %}
+      <p class="text-muted small text-center my-auto">No completed tasks yet</p>
+    {% endfor %}
+  </div>
+
+</div>
+
+{% endblock %}

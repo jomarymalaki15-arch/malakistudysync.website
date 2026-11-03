@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Course Subjects &bull; StudySync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-book-half text-primary"></i> Academic Subjects & Courses
+    </h1>
+    <p class="page-subtitle">Organize tasks by course, assign distinctive color codes, and track subject-specific workloads.</p>
+  </div>
+  <div>
+    <button type="button" class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+      <i class="bi bi-plus-lg"></i> Add New Subject
+    </button>
+  </div>
+</div>
+
+<div class="row g-4">
+  {% if subjects %}
+    {% for s in subjects %}
+      <div class="col-md-6 col-lg-4">
+        <div class="panel-card h-100 position-relative overflow-hidden" style="border-top: 4px solid {{ s.color }};">
+          <div class="panel-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="subject-pill px-3 py-1 fs-6" style="background-color: {{ s.color }};">
+                {{ s.subject_code }}
+              </span>
+              <div class="dropdown">
+                <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="dropdown">
+                  <i class="bi bi-three-dots-vertical"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                  <li>
+                    <button class="dropdown-item small" type="button" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#editSubjectModal{{ s.id }}">
+                      <i class="bi bi-pencil me-2"></i>Edit Subject
+                    </button>
+                  </li>
+                  <li>
+                    <form action="{{ url_for('subjects.delete', subject_id=s.id) }}" method="POST" onsubmit="return confirm('Delete subject {{ s.subject_code }}? Tasks will be unassigned.');">
+                      <button type="submit" class="dropdown-item small text-danger">
+                        <i class="bi bi-trash me-2"></i>Delete
+                      </button>
+                    </form>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <h5 class="fw-bold text-dark mt-3 mb-1">{{ s.subject_name }}</h5>
+            <p class="text-muted small mb-2"><i class="bi bi-person-badge me-1"></i>{{ s.instructor or 'Instructor Not Assigned' }}</p>
+            {% if s.description %}
+              <p class="text-secondary small mb-3 text-truncate-2" style="font-size: 0.8rem;">{{ s.description }}</p>
+            {% endif %}
+
+            <!-- Statistics counts -->
+            <div class="row g-2 text-center py-2 bg-light rounded-3 my-3">
+              <div class="col-4 border-end">
+                <small class="text-muted d-block" style="font-size: 0.7rem;">TOTAL</small>
+                <span class="fw-bold text-dark">{{ s.task_count }}</span>
+              </div>
+              <div class="col-4 border-end">
+                <small class="text-warning d-block" style="font-size: 0.7rem;">PENDING</small>
+                <span class="fw-bold text-warning">{{ s.pending_count }}</span>
+              </div>
+              <div class="col-4">
+                <small class="text-success d-block" style="font-size: 0.7rem;">DONE</small>
+                <span class="fw-bold text-success">{{ s.completed_count }}</span>
+              </div>
+            </div>
+
+            <a href="{{ url_for('tasks.index', subject_id=s.id) }}" class="btn btn-sm btn-outline-primary w-100">
+              <i class="bi bi-list-task me-1"></i> View Subject Tasks
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Subject Modal -->
+      <div class="modal fade" id="editSubjectModal{{ s.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content" style="border-radius: 12px;">
+            <form action="{{ url_for('subjects.edit', subject_id=s.id) }}" method="POST">
+              <div class="modal-header">
+                <h5 class="modal-title fw-bold">Edit Subject: {{ s.subject_code }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body p-4">
+                <div class="row g-3 mb-3">
+                  <div class="col-md-5">
+                    <label class="form-label small fw-semibold">Subject Code *</label>
+                    <input type="text" name="subject_code" class="form-control" value="{{ s.subject_code }}" required>
+                  </div>
+                  <div class="col-md-7">
+                    <label class="form-label small fw-semibold">Subject Name *</label>
+                    <input type="text" name="subject_name" class="form-control" value="{{ s.subject_name }}" required>
+                  </div>
+                </div>
+                <div class="row g-3 mb-3">
+                  <div class="col-md-8">
+                    <label class="form-label small fw-semibold">Instructor</label>
+                    <input type="text" name="instructor" class="form-control" value="{{ s.instructor or '' }}">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Color Tag</label>
+                    <input type="color" name="color" class="form-control form-control-color w-100" value="{{ s.color }}">
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label small fw-semibold">Description</label>
+                  <textarea name="description" class="form-control" rows="3">{{ s.description or '' }}</textarea>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary-custom">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+    {% endfor %}
+  {% else %}
+    <div class="col-12">
+      <div class="panel-card text-center py-5">
+        <i class="bi bi-book fs-1 text-muted d-block mb-3"></i>
+        <h5 class="fw-bold text-dark">No Subjects Added Yet</h5>
+        <p class="text-muted small">Create your first subject to categorize tasks and customize colors.</p>
+        <button type="button" class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+          <i class="bi bi-plus-lg"></i> Add First Subject
+        </button>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Add Subject Modal -->
+<div class="modal fade" id="addSubjectModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content" style="border-radius: 12px;">
+      <form action="{{ url_for('subjects.add') }}" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Add Academic Subject</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="row g-3 mb-3">
+            <div class="col-md-5">
+              <label class="form-label small fw-semibold">Subject Code *</label>
+              <input type="text" name="subject_code" class="form-control" placeholder="e.g. CS304" required>
+            </div>
+            <div class="col-md-7">
+              <label class="form-label small fw-semibold">Subject Name *</label>
+              <input type="text" name="subject_name" class="form-control" placeholder="e.g. Cloud Computing" required>
+            </div>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-8">
+              <label class="form-label small fw-semibold">Instructor</label>
+              <input type="text" name="instructor" class="form-control" placeholder="e.g. Dr. Jane Doe">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Color Tag</label>
+              <input type="color" name="color" class="form-control form-control-color w-100" value="#2563EB">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Description</label>
+            <textarea name="description" class="form-control" rows="3" placeholder="Course syllabus notes, lecture hall, or grading breakdown..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary-custom">Create Subject</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

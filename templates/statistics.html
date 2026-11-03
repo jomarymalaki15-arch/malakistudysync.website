@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Completion Statistics &bull; StudySync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-graph-up-arrow text-primary"></i> Academic Completion Statistics
+    </h1>
+    <p class="page-subtitle">Track historical completion velocity, punctuality metrics, and subject performance.</p>
+  </div>
+</div>
+
+<!-- 4 Key Statistic KPI Cards -->
+<div class="row g-4 mb-4">
+  <!-- Today -->
+  <div class="col-md-3">
+    <div class="stat-card completed">
+      <div class="stat-info">
+        <span class="stat-label">Completed Today</span>
+        <span class="stat-value">{{ today_completed }}</span>
+      </div>
+      <div class="stat-icon"><i class="bi bi-check2-circle"></i></div>
+    </div>
+  </div>
+
+  <!-- This Week -->
+  <div class="col-md-3">
+    <div class="stat-card total">
+      <div class="stat-info">
+        <span class="stat-label">This Week (7 Days)</span>
+        <span class="stat-value">{{ week_completed }}</span>
+      </div>
+      <div class="stat-icon"><i class="bi bi-calendar-check-fill"></i></div>
+    </div>
+  </div>
+
+  <!-- This Month -->
+  <div class="col-md-3">
+    <div class="stat-card upcoming">
+      <div class="stat-info">
+        <span class="stat-label">This Month</span>
+        <span class="stat-value">{{ month_completed }}</span>
+      </div>
+      <div class="stat-icon"><i class="bi bi-calendar3"></i></div>
+    </div>
+  </div>
+
+  <!-- On-time Rate -->
+  <div class="col-md-3">
+    <div class="stat-card priority">
+      <div class="stat-info">
+        <span class="stat-label">On-Time Rate</span>
+        <span class="stat-value">{{ on_time_rate }}%</span>
+      </div>
+      <div class="stat-icon"><i class="bi bi-stopwatch-fill"></i></div>
+    </div>
+  </div>
+</div>
+
+<!-- Subject Completion Metrics Table -->
+<div class="panel-card mb-4">
+  <div class="panel-header">
+    <h5 class="panel-title mb-0"><i class="bi bi-table text-primary"></i> Subject-Based Completion Velocity</h5>
+  </div>
+  <div class="panel-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light small text-uppercase text-muted">
+          <tr>
+            <th class="ps-4">Subject</th>
+            <th>Total Assigned</th>
+            <th>Completed</th>
+            <th>Overdue History</th>
+            <th>Completion Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sub in subject_stats %}
+            {% set sub_rate = ((sub.completed / sub.total * 100)|round|int) if sub.total > 0 else 0 %}
+            <tr>
+              <td class="ps-4">
+                <span class="subject-pill" style="background-color: {{ sub.color }};">
+                  {{ sub.subject_code }}
+                </span>
+                <span class="fw-semibold text-dark ms-2">{{ sub.subject_name }}</span>
+              </td>
+              <td><b>{{ sub.total }}</b> tasks</td>
+              <td><span class="text-success fw-bold">{{ sub.completed }}</span></td>
+              <td><span class="text-danger fw-bold">{{ sub.overdue }}</span></td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="progress flex-grow-1" style="height: 8px;">
+                    <div class="progress-bar" style="width: {{ sub_rate }}%; background-color: {{ sub.color }};"></div>
+                  </div>
+                  <span class="small fw-bold">{{ sub_rate }}%</span>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

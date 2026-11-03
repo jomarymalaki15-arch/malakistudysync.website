@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Interactive Academic Calendar &bull; StudySync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-calendar3 text-primary"></i> Academic Calendar
+    </h1>
+    <p class="page-subtitle">Monthly, weekly, and daily interactive task schedule. Click any date to quickly schedule a task.</p>
+  </div>
+  <div>
+    <a href="{{ url_for('tasks.add') }}" class="btn btn-primary-custom">
+      <i class="bi bi-plus-lg"></i> Add New Task
+    </a>
+  </div>
+</div>
+
+<div class="panel-card">
+  <div class="panel-body p-4">
+    <div id="fullCalendarWrapper" style="min-height: 650px;"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const calendarEl = document.getElementById('fullCalendarWrapper');
+    if (!calendarEl) return;
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
+        },
+        buttonText: {
+            today: 'Today',
+            month: 'Month',
+            week: 'Week',
+            day: 'Day',
+            list: 'Agenda'
+        },
+        events: '/api/calendar/events',
+        selectable: true,
+        selectMirror: true,
+        dayMaxEvents: true,
+        eventClick: function(info) {
+            const props = info.event.extendedProps;
+            openTaskModal(
+                props.title || info.event.title,
+                props.subject,
+                props.taskType,
+                props.dueDate,
+                props.dueTime,
+                props.priority,
+                props.priorityReason,
+                props.status,
+                props.description,
+                `/tasks/${props.taskId}/edit`
+            );
+        },
+        dateClick: function(info) {
+            // Quick redirect to Add Task with date pre-filled
+            window.location.href = `/tasks/add?date=${info.dateStr}`;
+        }
+    });
+
+    calendar.render();
+});
+</script>
+{% endblock %}

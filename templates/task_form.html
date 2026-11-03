@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} Task &bull; StudySync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-pencil-square text-primary"></i> {{ action }} Academic Task
+    </h1>
+    <p class="page-subtitle">Configure task parameters. Smart prioritization will automatically compute urgency and lead time.</p>
+  </div>
+  <div>
+    <a href="{{ url_for('tasks.index') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to Tasks
+    </a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="panel-card">
+      <div class="panel-body p-4">
+        <form method="POST">
+          <!-- Title -->
+          <div class="mb-3">
+            <label for="title" class="form-label fw-semibold small text-dark">Task Title <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="title" name="title" 
+                   value="{{ task.title if task else '' }}" 
+                   placeholder="e.g. Chapter 4 Data Normalization Case Study" required autofocus>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <!-- Subject -->
+            <div class="col-md-6">
+              <label for="subject_id" class="form-label fw-semibold small text-dark">Course Subject</label>
+              <select class="form-select" id="subject_id" name="subject_id">
+                <option value="">-- General / No Subject --</option>
+                {% for s in subjects %}
+                  <option value="{{ s.id }}" {% if task and task.subject_id == s.id %}selected{% endif %}>
+                    {{ s.subject_code }} - {{ s.subject_name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Task Type -->
+            <div class="col-md-6">
+              <label for="task_type" class="form-label fw-semibold small text-dark">Task Type <span class="text-danger">*</span></label>
+              <select class="form-select" id="task_type" name="task_type" required>
+                <option value="Assignment" {% if task and task.task_type == 'Assignment' %}selected{% endif %}>Assignment</option>
+                <option value="Project" {% if task and task.task_type == 'Project' %}selected{% endif %}>Project</option>
+                <option value="Quiz" {% if task and task.task_type == 'Quiz' %}selected{% endif %}>Quiz</option>
+                <option value="Exam" {% if task and task.task_type == 'Exam' %}selected{% endif %}>Exam</option>
+                <option value="Presentation" {% if task and task.task_type == 'Presentation' %}selected{% endif %}>Presentation</option>
+                <option value="Other" {% if task and task.task_type == 'Other' %}selected{% endif %}>Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <!-- Due Date -->
+            <div class="col-md-4">
+              <label for="due_date" class="form-label fw-semibold small text-dark">Due Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="due_date" name="due_date" 
+                     value="{{ task.due_date if task else prefill_date }}" required>
+            </div>
+
+            <!-- Due Time -->
+            <div class="col-md-4">
+              <label for="due_time" class="form-label fw-semibold small text-dark">Due Time</label>
+              <input type="time" class="form-control" id="due_time" name="due_time" 
+                     value="{{ task.due_time if task else '23:59' }}">
+            </div>
+
+            <!-- Student Priority -->
+            <div class="col-md-4">
+              <label for="priority" class="form-label fw-semibold small text-dark">Student Baseline Priority</label>
+              <select class="form-select" id="priority" name="priority">
+                <option value="Critical" {% if task and task.priority == 'Critical' %}selected{% endif %}>Critical</option>
+                <option value="High" {% if task and task.priority == 'High' %}selected{% endif %}>High</option>
+                <option value="Medium" {% if (task and task.priority == 'Medium') or not task %}selected{% endif %}>Medium</option>
+                <option value="Low" {% if task and task.priority == 'Low' %}selected{% endif %}>Low</option>
+              </select>
+            </div>
+          </div>
+
+          {% if action == 'Edit' %}
+            <div class="mb-3">
+              <label for="status" class="form-label fw-semibold small text-dark">Status</label>
+              <select class="form-select" id="status" name="status">
+                <option value="Pending" {% if task.status == 'Pending' %}selected{% endif %}>Pending</option>
+                <option value="In Progress" {% if task.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                <option value="Completed" {% if task.status == 'Completed' %}selected{% endif %}>Completed</option>
+                <option value="Overdue" {% if task.status == 'Overdue' %}selected{% endif %}>Overdue</option>
+              </select>
+            </div>
+          {% endif %}
+
+          <!-- Description -->
+          <div class="mb-4">
+            <label for="description" class="form-label fw-semibold small text-dark">Task Description / Instructions</label>
+            <textarea class="form-control" id="description" name="description" rows="4" 
+                      placeholder="Add specific assignment rubric details, submission link requirements, or notes...">{{ task.description if task else '' }}</textarea>
+          </div>
+
+          <!-- Buttons -->
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{{ url_for('tasks.index') }}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary-custom">
+              <i class="bi bi-check-circle-fill"></i> Save Academic Task
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

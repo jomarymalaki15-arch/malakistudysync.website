@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Deadline Tracking &bull; StudySync{% endblock %}
+
+{% block content %}
+{% macro render_deadline_table(task_list, badge_theme) %}
+  {% if task_list %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light small text-uppercase text-muted">
+          <tr>
+            <th class="ps-4">Task</th>
+            <th>Subject</th>
+            <th>Type</th>
+            <th>Deadline</th>
+            <th>Remaining Countdown</th>
+            <th>Smart Priority</th>
+            <th class="text-end pe-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in task_list %}
+            <tr>
+              <td class="ps-4">
+                <a href="javascript:void(0);" 
+                   onclick="openTaskModal('{{ t.title|replace('\'', '\\\'') }}', '{{ t.subject_code }}', '{{ t.task_type }}', '{{ t.due_date }}', '{{ t.due_time }}', '{{ t.calculated_priority or t.priority }}', '{{ t.priority_reason|replace('\'', '\\\'') }}', '{{ t.status }}', '{{ (t.description or '')|replace('\'', '\\\'') }}', '{{ url_for('tasks.edit', task_id=t.id) }}')" 
+                   class="fw-semibold text-dark text-decoration-none">
+                  {{ t.title }}
+                </a>
+              </td>
+              <td>
+                <span class="subject-pill" style="background-color: {{ t.subject_color }};">
+                  {{ t.subject_code }}
+                </span>
+              </td>
+              <td><span class="badge bg-light text-dark border">{{ t.task_type }}</span></td>
+              <td>
+                <div class="fw-semibold" style="font-size: 0.85rem;">{{ t.due_date|datetimeformat }}</div>
+                <small class="text-muted">{{ t.due_time }}</small>
+              </td>
+              <td>
+                <span class="badge bg-{{ badge_theme }} {% if badge_theme in ['warning', 'info'] %}text-dark{% endif %}">
+                  {{ t.remaining_time_display }}
+                </span>
+              </td>
+              <td>
+                <span class="badge-priority badge-priority-{{ (t.calculated_priority or t.priority)|lower }}">
+                  {{ t.calculated_priority or t.priority }}
+                </span>
+              </td>
+              <td class="text-end pe-4">
+                <form action="{{ url_for('tasks.toggle_status', task_id=t.id) }}" method="POST" class="d-inline">
+                  <button type="submit" class="btn btn-sm {% if t.status == 'Completed' %}btn-outline-secondary{% else %}btn-success{% endif %}">
+                    {% if t.status == 'Completed' %}Reopen{% else %}Complete{% endif %}
+                  </button>
+                </form>
+                <a href="{{ url_for('tasks.edit', task_id=t.id) }}" class="btn btn-sm btn-outline-secondary ms-1">
+                  <i class="bi bi-pencil"></i>
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="p-5 text-center text-muted">
+      <i class="bi bi-clipboard-check fs-2 text-secondary d-block mb-2"></i>
+      No tasks in this category.
+    </div>
+  {% endif %}
+{% endmacro %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-clock-history text-primary"></i> Academic Deadline Tracker
+    </h1>
+    <p class="page-subtitle">Real-time deadline tracking categorized by urgency, remaining hours, and submission status.</p>
+  </div>
+  <div>
+    <a href="{{ url_for('tasks.add') }}" class="btn btn-primary-custom">
+      <i class="bi bi-plus-lg"></i> Add Task
+    </a>
+  </div>
+</div>
+
+<!-- Category Tabs -->
+<ul class="nav nav-pills mb-4 gap-2" id="deadlineTabs" role="tablist">
+  <li class="nav-item">
+    <button class="nav-link active fw-semibold" id="today-tab" data-bs-toggle="pill" data-bs-target="#tab-today" type="button">
+      <i class="bi bi-calendar-check me-1"></i> Due Today
+      <span class="badge bg-warning text-dark rounded-pill ms-1">{{ deadlines.today|length }}</span>
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link fw-semibold" id="tomorrow-tab" data-bs-toggle="pill" data-bs-target="#tab-tomorrow" type="button">
+      <i class="bi bi-calendar-event me-1"></i> Due Tomorrow
+      <span class="badge bg-info text-dark rounded-pill ms-1">{{ deadlines.tomorrow|length }}</span>
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link fw-semibold" id="upcoming-tab" data-bs-toggle="pill" data-bs-target="#tab-upcoming" type="button">
+      <i class="bi bi-calendar-range me-1"></i> Upcoming Deadlines
+      <span class="badge bg-primary rounded-pill ms-1">{{ deadlines.upcoming|length }}</span>
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link fw-semibold" id="overdue-tab" data-bs-toggle="pill" data-bs-target="#tab-overdue" type="button">
+      <i class="bi bi-exclamation-octagon-fill me-1 text-danger"></i> Overdue Tasks
+      <span class="badge bg-danger rounded-pill ms-1">{{ deadlines.overdue|length }}</span>
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link fw-semibold" id="completed-tab" data-bs-toggle="pill" data-bs-target="#tab-completed" type="button">
+      <i class="bi bi-check-all me-1 text-success"></i> Completed
+      <span class="badge bg-success rounded-pill ms-1">{{ deadlines.completed|length }}</span>
+    </button>
+  </li>
+</ul>
+
+<!-- Tab Contents -->
+<div class="tab-content" id="deadlineTabContent">
+
+  <!-- TAB: DUE TODAY -->
+  <div class="tab-pane fade show active" id="tab-today" role="tabpanel">
+    <div class="panel-card">
+      <div class="panel-header bg-light">
+        <h5 class="panel-title mb-0 text-warning"><i class="bi bi-sun-fill me-2"></i> Requirements Due Today</h5>
+        <span class="small text-muted">Complete before midnight or specified deadline time</span>
+      </div>
+      <div class="panel-body p-0">
+        {{ render_deadline_table(deadlines.today, 'warning') }}
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: DUE TOMORROW -->
+  <div class="tab-pane fade" id="tab-tomorrow" role="tabpanel">
+    <div class="panel-card">
+      <div class="panel-header bg-light">
+        <h5 class="panel-title mb-0 text-info"><i class="bi bi-calendar2-day me-2"></i> Due Tomorrow (Within 48h)</h5>
+        <span class="small text-muted">Finalize drafts and submissions</span>
+      </div>
+      <div class="panel-body p-0">
+        {{ render_deadline_table(deadlines.tomorrow, 'info') }}
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: UPCOMING -->
+  <div class="tab-pane fade" id="tab-upcoming" role="tabpanel">
+    <div class="panel-card">
+      <div class="panel-header bg-light">
+        <h5 class="panel-title mb-0 text-primary"><i class="bi bi-calendar3 me-2"></i> Upcoming Deadlines (Next 7+ Days)</h5>
+        <span class="small text-muted">Scheduled upcoming coursework</span>
+      </div>
+      <div class="panel-body p-0">
+        {{ render_deadline_table(deadlines.upcoming, 'primary') }}
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: OVERDUE -->
+  <div class="tab-pane fade" id="tab-overdue" role="tabpanel">
+    <div class="panel-card border-danger">
+      <div class="panel-header bg-danger-subtle">
+        <h5 class="panel-title mb-0 text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i> Past-due Requirements</h5>
+        <span class="small text-danger fw-semibold">Immediate action needed to submit</span>
+      </div>
+      <div class="panel-body p-0">
+        {{ render_deadline_table(deadlines.overdue, 'danger') }}
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: COMPLETED -->
+  <div class="tab-pane fade" id="tab-completed" role="tabpanel">
+    <div class="panel-card">
+      <div class="panel-header bg-light">
+        <h5 class="panel-title mb-0 text-success"><i class="bi bi-check-circle-fill me-2"></i> Finished Tasks</h5>
+      </div>
+      <div class="panel-body p-0">
+        {{ render_deadline_table(deadlines.completed, 'success') }}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

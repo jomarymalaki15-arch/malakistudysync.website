@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Reminders & Notification Center &bull; StudySync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-bell-fill text-primary"></i> Reminders & Notification Center
+    </h1>
+    <p class="page-subtitle">Automated deadline alerts, overdue reminders, and critical examination notifications.</p>
+  </div>
+  {% if unread_count > 0 %}
+    <form action="{{ url_for('reminders.mark_all_read') }}" method="POST">
+      <button type="submit" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-check-all me-1"></i> Mark All as Read
+      </button>
+    </form>
+  {% endif %}
+</div>
+
+<div class="row g-4">
+  <!-- Notifications Feed -->
+  <div class="col-lg-8">
+    <div class="panel-card">
+      <div class="panel-header bg-light">
+        <h5 class="panel-title mb-0"><i class="bi bi-envelope-open-fill text-primary"></i> In-App Notification Alerts</h5>
+        <span class="badge bg-danger rounded-pill">{{ unread_count }} Unread</span>
+      </div>
+      <div class="panel-body p-0">
+        {% if notifications %}
+          <div class="list-group list-group-flush">
+            {% for n in notifications %}
+              {% set icon_col = 'danger' if n.notification_type == 'overdue' else ('warning' if n.notification_type == 'deadline' else 'primary') %}
+              <div class="list-group-item p-3 d-flex justify-content-between align-items-center {% if not n.is_read %}bg-light border-start border-4 border-{{ icon_col }}{% endif %}">
+                <div class="d-flex align-items-start gap-3">
+                  <div class="stat-icon bg-{{ icon_col }}-subtle text-{{ icon_col }}" style="width: 40px; height: 40px; font-size: 1.1rem;">
+                    <i class="bi bi-{% if n.notification_type == 'overdue' %}exclamation-octagon-fill{% elif n.notification_type == 'deadline' %}alarm-fill{% else %}info-circle-fill{% endif %}"></i>
+                  </div>
+                  <div>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="fw-bold text-dark" style="font-size: 0.9rem;">{{ n.title }}</span>
+                      {% if not n.is_read %}
+                        <span class="badge bg-danger" style="font-size: 0.65rem;">NEW</span>
+                      {% endif %}
+                    </div>
+                    <p class="text-secondary small mb-1">{{ n.message }}</p>
+                    <small class="text-muted" style="font-size: 0.72rem;"><i class="bi bi-clock me-1"></i>{{ n.created_at }}</small>
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  {% if not n.is_read %}
+                    <form action="{{ url_for('reminders.mark_read', notif_id=n.id) }}" method="POST" class="m-0">
+                      <button type="submit" class="btn btn-sm btn-outline-secondary" title="Mark as Read">
+                        <i class="bi bi-check2"></i>
+                      </button>
+                    </form>
+                  {% endif %}
+                  <form action="{{ url_for('reminders.delete_notification', notif_id=n.id) }}" method="POST" class="m-0">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Dismiss">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </form>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="p-5 text-center text-muted">
+            <i class="bi bi-bell-slash fs-1 text-secondary d-block mb-2"></i>
+            No notifications in your inbox.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Scheduled Reminders Queue -->
+  <div class="col-lg-4">
+    <div class="panel-card">
+      <div class="panel-header bg-light">
+        <h5 class="panel-title mb-0"><i class="bi bi-alarm-fill text-secondary"></i> Smart Reminders Queue</h5>
+      </div>
+      <div class="panel-body p-0">
+        {% if reminders %}
+          <div class="list-group list-group-flush">
+            {% for r in reminders %}
+              <div class="list-group-item p-3">
+                <div class="fw-semibold text-dark small mb-1">{{ r.task_title }}</div>
+                <div class="d-flex justify-content-between text-muted small">
+                  <span class="badge bg-light text-dark border">{{ r.reminder_type|replace('_', ' ')|capitalize }}</span>
+                  <small>{{ r.due_date|datetimeformat }}</small>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="p-4 text-center text-muted small">No active reminder triggers.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

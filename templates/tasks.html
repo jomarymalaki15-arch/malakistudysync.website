@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}My Academic Tasks &bull; StudySync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-check2-square text-primary"></i> My Academic Tasks
+    </h1>
+    <p class="page-subtitle">Manage, prioritize, track, and complete all your course requirements.</p>
+  </div>
+  <div>
+    <a href="{{ url_for('tasks.add') }}" class="btn btn-primary-custom">
+      <i class="bi bi-plus-lg"></i> Create New Task
+    </a>
+  </div>
+</div>
+
+<!-- Quick Filter Form Bar -->
+<div class="panel-card mb-4">
+  <div class="panel-body py-3">
+    <form method="GET" action="{{ url_for('tasks.index') }}" class="row g-2 align-items-center">
+      <!-- Status Filter -->
+      <div class="col-md-2 col-6">
+        <label class="form-label small fw-semibold text-muted mb-1">Status</label>
+        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Statuses</option>
+          <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending</option>
+          <option value="In Progress" {% if selected_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+          <option value="Completed" {% if selected_status == 'Completed' %}selected{% endif %}>Completed</option>
+          <option value="Overdue" {% if selected_status == 'Overdue' %}selected{% endif %}>Overdue</option>
+        </select>
+      </div>
+
+      <!-- Subject Filter -->
+      <div class="col-md-3 col-6">
+        <label class="form-label small fw-semibold text-muted mb-1">Subject</label>
+        <select name="subject_id" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Subjects</option>
+          {% for s in subjects %}
+            <option value="{{ s.id }}" {% if selected_subject == s.id %}selected{% endif %}>{{ s.subject_code }} - {{ s.subject_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Priority Filter -->
+      <div class="col-md-2 col-6">
+        <label class="form-label small fw-semibold text-muted mb-1">Priority</label>
+        <select name="priority" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Priorities</option>
+          <option value="Critical" {% if selected_priority == 'Critical' %}selected{% endif %}>Critical</option>
+          <option value="High" {% if selected_priority == 'High' %}selected{% endif %}>High</option>
+          <option value="Medium" {% if selected_priority == 'Medium' %}selected{% endif %}>Medium</option>
+          <option value="Low" {% if selected_priority == 'Low' %}selected{% endif %}>Low</option>
+        </select>
+      </div>
+
+      <!-- Task Type Filter -->
+      <div class="col-md-2 col-6">
+        <label class="form-label small fw-semibold text-muted mb-1">Type</label>
+        <select name="task_type" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Types</option>
+          <option value="Assignment" {% if selected_type == 'Assignment' %}selected{% endif %}>Assignment</option>
+          <option value="Project" {% if selected_type == 'Project' %}selected{% endif %}>Project</option>
+          <option value="Quiz" {% if selected_type == 'Quiz' %}selected{% endif %}>Quiz</option>
+          <option value="Exam" {% if selected_type == 'Exam' %}selected{% endif %}>Exam</option>
+          <option value="Presentation" {% if selected_type == 'Presentation' %}selected{% endif %}>Presentation</option>
+          <option value="Other" {% if selected_type == 'Other' %}selected{% endif %}>Other</option>
+        </select>
+      </div>
+
+      <!-- Sort By -->
+      <div class="col-md-2 col-6">
+        <label class="form-label small fw-semibold text-muted mb-1">Sort By</label>
+        <select name="sort_by" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Newest Created</option>
+          <option value="deadline_asc" {% if selected_sort == 'deadline_asc' %}selected{% endif %}>Earliest Deadline</option>
+          <option value="deadline_desc" {% if selected_sort == 'deadline_desc' %}selected{% endif %}>Furthest Deadline</option>
+          <option value="priority" {% if selected_sort == 'priority' %}selected{% endif %}>Highest Priority</option>
+        </select>
+      </div>
+
+      <!-- Reset -->
+      <div class="col-md-1 col-6 d-flex align-items-end">
+        <a href="{{ url_for('tasks.index') }}" class="btn btn-sm btn-outline-secondary w-100" title="Reset Filters">
+          <i class="bi bi-arrow-counterclockwise"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Task Table Panel -->
+<div class="panel-card">
+  <div class="panel-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light text-muted small text-uppercase">
+          <tr>
+            <th class="ps-4" style="width: 50px;">Done</th>
+            <th>Task Title & Subject</th>
+            <th>Type</th>
+            <th>Due Deadline</th>
+            <th>Smart Priority</th>
+            <th>Status</th>
+            <th class="text-end pe-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if tasks %}
+            {% for t in tasks %}
+              <tr>
+                <!-- Toggle status checkbox button -->
+                <td class="ps-4">
+                  <form action="{{ url_for('tasks.toggle_status', task_id=t.id) }}" method="POST" class="m-0">
+                    <button type="submit" class="btn btn-sm {% if t.status == 'Completed' %}btn-success{% else %}btn-outline-secondary{% endif %} rounded-circle" style="width: 28px; height: 28px; padding: 0;">
+                      <i class="bi bi-check"></i>
+                    </button>
+                  </form>
+                </td>
+
+                <!-- Title & Subject -->
+                <td>
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="subject-pill" style="background-color: {{ t.subject_color }};">
+                      {{ t.subject_code }}
+                    </span>
+                    <a href="javascript:void(0);" 
+                       onclick="openTaskModal('{{ t.title|replace('\'', '\\\'') }}', '{{ t.subject_code }}', '{{ t.task_type }}', '{{ t.due_date }}', '{{ t.due_time }}', '{{ t.calculated_priority or t.priority }}', '{{ t.priority_reason|replace('\'', '\\\'') }}', '{{ t.status }}', '{{ (t.description or '')|replace('\'', '\\\'') }}', '{{ url_for('tasks.edit', task_id=t.id) }}')"
+                       class="fw-semibold text-dark text-decoration-none {% if t.status == 'Completed' %}text-decoration-line-through text-muted{% endif %}">
+                      {{ t.title }}
+                    </a>
+                  </div>
+                  {% if t.description %}
+                    <small class="text-muted d-block text-truncate" style="max-width: 320px;">
+                      {{ t.description }}
+                    </small>
+                  {% endif %}
+                </td>
+
+                <!-- Type -->
+                <td>
+                  <span class="badge bg-light text-dark border">{{ t.task_type }}</span>
+                </td>
+
+                <!-- Due Deadline -->
+                <td>
+                  <div class="fw-semibold" style="font-size: 0.85rem;">{{ t.due_date|datetimeformat }}</div>
+                  <small class="badge {% if 'Overdue' in t.remaining_time_display %}bg-danger{% elif 'Due in' in t.remaining_time_display or 'tomorrow' in t.remaining_time_display %}bg-warning text-dark{% else %}text-muted{% endif %} p-1">
+                    {{ t.remaining_time_display }}
+                  </small>
+                </td>
+
+                <!-- Smart Priority with Tooltip reason -->
+                <td>
+                  <span class="badge-priority badge-priority-{{ (t.calculated_priority or t.priority)|lower }}" 
+                        data-bs-toggle="tooltip" 
+                        title="{{ t.priority_reason }}">
+                    {{ t.calculated_priority or t.priority }} <i class="bi bi-info-circle ms-1" style="font-size: 0.65rem;"></i>
+                  </span>
+                </td>
+
+                <!-- Status -->
+                <td>
+                  <span class="badge-status badge-{{ t.status|lower|replace(' ', '') }}">
+                    <i class="bi bi-circle-fill" style="font-size: 0.45rem;"></i> {{ t.status }}
+                  </span>
+                </td>
+
+                <!-- Actions -->
+                <td class="text-end pe-4">
+                  <div class="btn-group btn-group-sm">
+                    <a href="{{ url_for('tasks.edit', task_id=t.id) }}" class="btn btn-outline-secondary" title="Edit Task">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <form action="{{ url_for('tasks.delete', task_id=t.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete task: {{ t.title }}?');">
+                      <button type="submit" class="btn btn-outline-danger" title="Delete Task">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="7" class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
+                No tasks found matching your filter criteria.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

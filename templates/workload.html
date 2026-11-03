@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Academic Workload Monitor &bull; StudySync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-speedometer2 text-primary"></i> Academic Workload Monitor
+    </h1>
+    <p class="page-subtitle">Stress index assessment, task distribution by course, and upcoming major examination tracker.</p>
+  </div>
+</div>
+
+<!-- Workload Level Gauge Banner -->
+<div class="panel-card mb-4 border-{{ workload_badge }}">
+  <div class="panel-body p-4 bg-{{ workload_badge }}-subtle rounded-3">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon bg-{{ workload_badge }} text-white" style="width: 56px; height: 56px; font-size: 1.6rem;">
+          <i class="bi bi-heart-pulse-fill"></i>
+        </div>
+        <div>
+          <div class="small fw-bold text-uppercase text-{{ workload_badge }}">Current Workload Stress Rating</div>
+          <h2 class="fw-bold text-dark mb-0">{{ workload_level }} <span class="fs-6 text-muted fw-normal">(Index Score: {{ workload_score }})</span></h2>
+          <p class="text-secondary small mb-0 mt-1">{{ workload_advice }}</p>
+        </div>
+      </div>
+      <div class="text-end">
+        <span class="badge bg-{{ workload_badge }} fs-6 px-3 py-2 text-uppercase">{{ workload_level }} Status</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Metric Overview Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card pending">
+      <div class="stat-info">
+        <span class="stat-label">Pending Requirements</span>
+        <span class="stat-value">{{ total_pending }}</span>
+      </div>
+      <div class="stat-icon">
+        <i class="bi bi-stack"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card upcoming">
+      <div class="stat-info">
+        <span class="stat-label">Due This Week</span>
+        <span class="stat-value">{{ tasks_this_week|length }}</span>
+      </div>
+      <div class="stat-icon">
+        <i class="bi bi-calendar-range-fill"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card priority">
+      <div class="stat-info">
+        <span class="stat-label">Upcoming Exams</span>
+        <span class="stat-value">{{ upcoming_exams|length }}</span>
+      </div>
+      <div class="stat-icon">
+        <i class="bi bi-mortarboard-fill"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Subject Workload Table -->
+  <div class="col-lg-7">
+    <div class="panel-card h-100">
+      <div class="panel-header">
+        <h5 class="panel-title mb-0"><i class="bi bi-book-fill text-primary"></i> Course Subject Workload Distribution</h5>
+      </div>
+      <div class="panel-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light small text-uppercase text-muted">
+              <tr>
+                <th class="ps-4">Course</th>
+                <th>Total Tasks</th>
+                <th>Pending / Due</th>
+                <th>High Priority</th>
+                <th class="text-end pe-4">Workload Bar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sub in subjects_workload %}
+                {% set p_pct = (sub.pending_tasks / (sub.total_tasks if sub.total_tasks > 0 else 1) * 100)|round|int %}
+                <tr>
+                  <td class="ps-4">
+                    <span class="subject-pill" style="background-color: {{ sub.color }};">
+                      {{ sub.subject_code }}
+                    </span>
+                    <span class="fw-semibold text-dark ms-2 small">{{ sub.subject_name }}</span>
+                  </td>
+                  <td><b>{{ sub.total_tasks }}</b></td>
+                  <td><span class="text-warning fw-bold">{{ sub.pending_tasks or 0 }}</span></td>
+                  <td><span class="text-danger fw-bold">{{ sub.high_priority or 0 }}</span></td>
+                  <td class="text-end pe-4" style="width: 140px;">
+                    <div class="progress" style="height: 6px; background-color: #E2E8F0;">
+                      <div class="progress-bar" style="width: {{ p_pct }}%; background-color: {{ sub.color }};"></div>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upcoming Exams & Deadlines this week -->
+  <div class="col-lg-5">
+    <!-- Major Exams -->
+    <div class="panel-card mb-4">
+      <div class="panel-header bg-danger-subtle">
+        <h5 class="panel-title mb-0 text-danger"><i class="bi bi-mortarboard-fill me-2"></i> Upcoming Examinations</h5>
+      </div>
+      <div class="panel-body p-0">
+        {% if upcoming_exams %}
+          <div class="list-group list-group-flush">
+            {% for ex in upcoming_exams %}
+              <div class="list-group-item p-3">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <span class="subject-pill mb-1" style="background-color: {{ ex.subject_color }};">
+                      {{ ex.subject_code }}
+                    </span>
+                    <div class="fw-bold text-dark mt-1">{{ ex.title }}</div>
+                    <small class="text-danger fw-semibold"><i class="bi bi-alarm me-1"></i>Exam Date: {{ ex.due_date|datetimeformat }} at {{ ex.due_time }}</small>
+                  </div>
+                  <span class="badge bg-danger">Critical</span>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="p-4 text-center text-muted small">
+            <i class="bi bi-check-circle text-success fs-3 d-block mb-1"></i>
+            No exams scheduled in the upcoming period!
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- This Week Tasks -->
+    <div class="panel-card">
+      <div class="panel-header">
+        <h5 class="panel-title mb-0"><i class="bi bi-calendar-week-fill text-warning"></i> Due Within 7 Days</h5>
+      </div>
+      <div class="panel-body p-0">
+        {% if tasks_this_week %}
+          <div class="list-group list-group-flush">
+            {% for tw in tasks_this_week %}
+              <div class="list-group-item p-3">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <span class="subject-pill" style="background-color: {{ tw.subject_color }}; font-size: 0.7rem;">
+                      {{ tw.subject_code }}
+                    </span>
+                    <span class="fw-semibold text-dark ms-1 small">{{ tw.title }}</span>
+                  </div>
+                  <small class="badge bg-light text-dark border">{{ tw.due_date|datetimeformat }}</small>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="p-3 text-center text-muted small">No assignments due this week.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

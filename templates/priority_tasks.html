@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Priority Tasks &bull; StudySync{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-exclamation-triangle-fill text-danger"></i> Smart Task Prioritization
+    </h1>
+    <p class="page-subtitle">Rule-based algorithmic prioritization factoring deadlines, examination weights, and urgency scores.</p>
+  </div>
+  <div>
+    <a href="{{ url_for('tasks.add') }}" class="btn btn-primary-custom">
+      <i class="bi bi-plus-lg"></i> Add New Task
+    </a>
+  </div>
+</div>
+
+<!-- Explainer Card -->
+<div class="panel-card mb-4 bg-light border-0 shadow-sm">
+  <div class="panel-body py-3">
+    <div class="d-flex align-items-center gap-3">
+      <div class="fs-3 text-primary"><i class="bi bi-cpu-fill"></i></div>
+      <div>
+        <div class="fw-bold text-dark" style="font-size: 0.9rem;">How StudySync Calculates Smart Priorities</div>
+        <p class="text-muted small mb-0">
+          Our explainable heuristic engine evaluates: (1) Remaining hours to due date/time, (2) Task type academic weight (Exams &gt; Projects &gt; Quizzes &gt; Assignments), (3) Student-selected baseline priority, and (4) Current completion status. Each task displays its calculated explanation.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Priority Quadrants / Columns -->
+<div class="row g-4">
+  {% for level, tasks in priority_groups.items() %}
+    {% set theme_color = 'danger' if level == 'Critical' else ('warning' if level == 'High' else ('primary' if level == 'Medium' else 'secondary')) %}
+    <div class="col-lg-6">
+      <div class="panel-card h-100">
+        <div class="panel-header bg-{{ theme_color }}-subtle">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge-priority badge-priority-{{ level|lower }}">{{ level }}</span>
+            <span class="fw-bold text-dark" style="font-size: 0.95rem;">Priority Requirements</span>
+          </div>
+          <span class="badge bg-{{ theme_color }} {% if theme_color == 'warning' %}text-dark{% endif %} rounded-pill">
+            {{ tasks|length }}
+          </span>
+        </div>
+        <div class="panel-body p-0">
+          {% if tasks %}
+            <div class="list-group list-group-flush">
+              {% for t in tasks %}
+                <div class="list-group-item p-3 hover-bg">
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                      <span class="subject-pill me-2" style="background-color: {{ t.subject_color }};">
+                        {{ t.subject_code }}
+                      </span>
+                      <a href="javascript:void(0);" 
+                         onclick="openTaskModal('{{ t.title|replace('\'', '\\\'') }}', '{{ t.subject_code }}', '{{ t.task_type }}', '{{ t.due_date }}', '{{ t.due_time }}', '{{ t.calculated_priority or t.priority }}', '{{ t.priority_reason|replace('\'', '\\\'') }}', '{{ t.status }}', '{{ (t.description or '')|replace('\'', '\\\'') }}', '{{ url_for('tasks.edit', task_id=t.id) }}')" 
+                         class="fw-semibold text-dark text-decoration-none">
+                        {{ t.title }}
+                      </a>
+                    </div>
+                    <span class="badge-status badge-{{ t.status|lower|replace(' ', '') }}">
+                      {{ t.status }}
+                    </span>
+                  </div>
+
+                  <!-- Explainable Reason Card -->
+                  <div class="p-2 rounded bg-light border mb-2" style="font-size: 0.78rem;">
+                    <i class="bi bi-info-circle-fill text-{{ theme_color }} me-1"></i>
+                    <b>Reason:</b> {{ t.priority_reason or 'Evaluated based on standard timetable.' }}
+                  </div>
+
+                  <div class="d-flex justify-content-between align-items-center small text-muted">
+                    <span><i class="bi bi-clock me-1"></i>Due: <b>{{ t.due_date|datetimeformat }}</b> ({{ t.remaining_time_display }})</span>
+                    <div class="d-flex gap-2">
+                      <form action="{{ url_for('tasks.toggle_status', task_id=t.id) }}" method="POST" class="m-0">
+                        <button type="submit" class="btn btn-sm btn-outline-success py-0 px-2" style="font-size: 0.75rem;">
+                          {% if t.status == 'Completed' %}Reopen{% else %}Complete{% endif %}
+                        </button>
+                      </form>
+                      <a href="{{ url_for('tasks.edit', task_id=t.id) }}" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;">
+                        Edit
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="p-4 text-center text-muted small">
+              No tasks currently designated as {{ level }} priority.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}
